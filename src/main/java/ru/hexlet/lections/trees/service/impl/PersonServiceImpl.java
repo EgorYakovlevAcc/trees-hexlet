@@ -50,14 +50,16 @@ public class PersonServiceImpl implements PersonService {
         List<Person> peopleList = getPeopleByPath(path);
         return peopleList != null
                 ? peopleList.stream()
-                    .map(Person::getName)
-                    .collect(Collectors.toList())
+                .map(Person::getName)
+                .collect(Collectors.toList())
                 : null;
     }
 
     private List<Person> getPeopleByPath(String path) {
         List<Long> parentIds = getParentIdsByPath(path);
-        return this.personRepository.findPeopleByIds(parentIds);
+        return parentIds != null
+                ? this.personRepository.findPeopleByIds(parentIds)
+                : null;
     }
 
     private ShortPersonDto toShortPersonDto(Person person) {
@@ -79,9 +81,12 @@ public class PersonServiceImpl implements PersonService {
     private String getPathByParentId(Long parentId) {
         if (parentId != null) {
             String parentPath = this.personRepository.findParentPathById(parentId);
-            return String.format(SEVERAL_PEOPLE_PATH_PATTERN, parentPath, parentId);
+            if (parentPath != null) {
+                return String.format(SEVERAL_PEOPLE_PATH_PATTERN, parentPath, parentId);
+            }
+            return String.valueOf(parentId);
         }
-        return EMPTY_STRING;
+        return null;
     }
 
     private Long getLastParentIdByPath(String path) {
@@ -93,7 +98,7 @@ public class PersonServiceImpl implements PersonService {
     }
 
     private List<Long> getParentIdsByPath(String path) {
-        if (path != null) {
+        if (path != null && !EMPTY_STRING.equals(path)) {
             return Arrays.stream(path.split(DOT_STRING))
                     .map(Long::parseLong)
                     .collect(Collectors.toList());
